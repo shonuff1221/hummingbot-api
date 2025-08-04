@@ -247,7 +247,7 @@ async def get_controller_config_template(controller_type: ControllerType, contro
                             } for name, field in config_class.model_fields.items()}
     return json.loads(json.dumps(config_fields, default=str))
 
-@router.get("/{controller_type}/{controller_name}/config/validate")
+@router.post("/{controller_type}/{controller_name}/config/validate")
 async def validate_controller_config(controller_type: ControllerType, controller_name: str, config: Dict):
     """
     Validate controller configuration against the controller's config class.
