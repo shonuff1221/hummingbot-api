@@ -218,7 +218,7 @@ async def delete_controller(controller_type: ControllerType, controller_name: st
         )
 
 
-@router.get("/{controller_type}/{controller_name}/config/template", response_model=Dict)
+@router.get("/{controller_type}/{controller_name}/config/template")
 async def get_controller_config_template(controller_type: ControllerType, controller_name: str):
     """
     Get controller configuration template with default values.
@@ -241,10 +241,40 @@ async def get_controller_config_template(controller_type: ControllerType, contro
         )
 
     # Extract fields and default values
-    config_fields = {name: field.default for name, field in config_class.model_fields.items()}
+    config_fields = {name: {"default": field.default,
+                            "type": field.annotation,
+                            "required": field.required if hasattr(field, 'required') else False,
+                            } for name, field in config_class.model_fields.items()}
     return json.loads(json.dumps(config_fields, default=str))
 
+@router.post("/{controller_type}/{controller_name}/config/validate")
+async def validate_controller_config(controller_type: ControllerType, controller_name: str, config: Dict):
+    """
+    Validate controller configuration against the controller's config class.
 
+    Args:
+        controller_type: Type of the controller
+        controller_name: Name of the controller
+        config: Configuration dictionary to validate
+
+    Returns:
+        Success message if configuration is valid
+
+    Raises:
+        HTTPException: 400 if validation fails
+    """
+    config_class = fs_util.load_controller_config_class(controller_type.value, controller_name)
+    if config_class is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Controller configuration class for '{controller_name}' not found"
+        )
+
+    try:
+        config_class(**config)  # Validate by instantiating the model
+        return {"message": "Configuration is valid"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # Bot-specific controller config endpoints

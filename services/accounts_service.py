@@ -252,13 +252,13 @@ class AccountsService:
                 self.accounts_state[account_name] = {}
             for connector_name, connector in connectors.items():
                 try:
-                    tokens_info = await self._get_connector_tokens_info(connector, connector_name, self.market_data_feed_manager)
+                    tokens_info = await self._get_connector_tokens_info(connector, connector_name)
                     self.accounts_state[account_name][connector_name] = tokens_info
                 except Exception as e:
                     logger.error(f"Error updating balances for connector {connector_name} in account {account_name}: {e}")
                     self.accounts_state[account_name][connector_name] = []
 
-    async def _get_connector_tokens_info(self, connector, connector_name: str, market_data_manager: Optional[MarketDataFeedManager] = None) -> List[Dict]:
+    async def _get_connector_tokens_info(self, connector, connector_name: str) -> List[Dict]:
         """Get token info from a connector instance using cached prices when available."""
         balances = [{"token": key, "units": value} for key, value in connector.get_all_balances().items() if
                     value != Decimal("0") and key not in settings.banned_tokens]
@@ -269,10 +269,10 @@ class AccountsService:
         prices_from_cache = {}
         trading_pairs_need_update = []
         
-        if market_data_manager:
+        if self.market_data_feed_manager:
             for trading_pair in trading_pairs:
                 try:
-                    cached_price = market_data_manager.market_data_provider.get_rate(trading_pair)
+                    cached_price = self.market_data_feed_manager.market_data_provider.get_rate(trading_pair)
                     if cached_price > 0:
                         prices_from_cache[trading_pair] = cached_price
                     else:
