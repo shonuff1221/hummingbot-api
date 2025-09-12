@@ -9,6 +9,9 @@ dependencies:
   - boto3
   - libcxx
   - python-dotenv
+  - pandas-ta>=0.3.14b
+  - pandas>=2.2.3
+  - numpy>=1.26
   - docker-py
   - pip
   - pip:
