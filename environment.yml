@@ -15,8 +15,10 @@ dependencies:
   - docker-py
   - pip
   - pip:
-      - hummingbot==20250715   
-      - msgpack>=1.0.5         
+      - hummingbot
+      - pandas==2.2.3
+      - pandas-ta<0.4.0       
+      - msgpack>=1.0.5
       - flake8
       - isort
       - pre-commit
