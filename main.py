@@ -35,6 +35,7 @@ from utils.security import BackendAPISecurity
 from services.bots_orchestrator import BotsOrchestrator
 from services.accounts_service import AccountsService
 from services.docker_service import DockerService
+from services.gateway_service import GatewayService
 from services.market_data_feed_manager import MarketDataFeedManager
 from utils.bot_archiver import BotArchiver
 from routers import (
@@ -45,6 +46,7 @@ from routers import (
     connectors,
     controllers,
     docker,
+    gateway,
     market_data,
     portfolio,
     scripts,
@@ -110,6 +112,7 @@ async def lifespan(app: FastAPI):
         market_data_feed_manager=market_data_feed_manager
     )
     docker_service = DockerService()
+    gateway_service = GatewayService()
     bot_archiver = BotArchiver(
         settings.aws.api_key,
         settings.aws.secret_key,
@@ -123,6 +126,7 @@ async def lifespan(app: FastAPI):
     app.state.bots_orchestrator = bots_orchestrator
     app.state.accounts_service = accounts_service
     app.state.docker_service = docker_service
+    app.state.gateway_service = gateway_service
     app.state.bot_archiver = bot_archiver
     app.state.market_data_feed_manager = market_data_feed_manager
 
@@ -191,6 +195,7 @@ def auth_user(
 
 # Include all routers with authentication
 app.include_router(docker.router, dependencies=[Depends(auth_user)])
+app.include_router(gateway.router, dependencies=[Depends(auth_user)])
 app.include_router(accounts.router, dependencies=[Depends(auth_user)])
 app.include_router(connectors.router, dependencies=[Depends(auth_user)])
 app.include_router(portfolio.router, dependencies=[Depends(auth_user)])
