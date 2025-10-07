@@ -98,8 +98,15 @@ from .accounts import (
 )
 
 
-# Docker models  
+# Docker models
 from .docker import DockerImage
+
+# Gateway models
+from .gateway import (
+    GatewayConfig,
+    GatewayStatus,
+    GatewayAction,
+)
 
 # Backtesting models
 from .backtesting import BacktestingConfig
@@ -223,6 +230,10 @@ __all__ = [
     "CredentialRequest",
     # Docker models
     "DockerImage",
+    # Gateway models
+    "GatewayConfig",
+    "GatewayStatus",
+    "GatewayAction",
     # Backtesting models
     "BacktestingConfig",
     # Pagination models
