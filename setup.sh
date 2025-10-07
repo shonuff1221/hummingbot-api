@@ -30,6 +30,12 @@ echo -n "API password [default: admin]: "
 read PASSWORD
 PASSWORD=${PASSWORD:-admin}
 
+echo ""
+echo -e "${YELLOW}Gateway Configuration (Optional)${NC}"
+echo -n "Gateway passphrase [default: admin, press Enter to skip]: "
+read GATEWAY_PASSPHRASE
+GATEWAY_PASSPHRASE=${GATEWAY_PASSPHRASE:-admin}
+
 # Set paths and defaults
 BOTS_PATH=$(pwd)
 
@@ -100,6 +106,11 @@ AWS_S3_DEFAULT_BUCKET_NAME=$S3_BUCKET
 # =================================================================
 LOGFIRE_ENVIRONMENT=$LOGFIRE_ENV
 BANNED_TOKENS=$BANNED_TOKENS
+
+# =================================================================
+# 🌐 Gateway Configuration (GATEWAY_*) - Optional
+# =================================================================
+GATEWAY_PASSPHRASE=$GATEWAY_PASSPHRASE
 
 # =================================================================
 # 📁 Legacy Settings (maintained for backward compatibility)
