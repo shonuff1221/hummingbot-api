@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from models.trading import (
     PortfolioStateFilterRequest,
@@ -327,5 +327,50 @@ async def get_accounts_distribution(
             account_data["percentage"] = (account_data.get("total_value", 0) / total_value) * 100
     
     filtered_distribution["account_count"] = len(filtered_distribution["accounts"])
-    
+
     return filtered_distribution
+
+
+@router.get("/gateway/{chain}/balance")
+async def get_gateway_wallet_balance(
+    chain: str,
+    address: Optional[str] = Query(default=None, description="Wallet address (uses default wallet if not specified)"),
+    tokens: Optional[List[str]] = Query(default=None, description="List of token symbols to query"),
+    accounts_service: AccountsService = Depends(get_accounts_service)
+):
+    """
+    Get Gateway wallet balances with pricing from rate sources.
+
+    This endpoint queries a Gateway wallet and returns token balances
+    with current market prices fetched from the rate source provider. Prices are
+    cached and updated in the background by the market data feed manager.
+
+    Args:
+        chain: Blockchain chain (e.g., 'solana', 'ethereum')
+        address: Optional wallet address (uses chain's default wallet if not specified)
+        tokens: Optional list of token symbols (if None, returns top 20 tokens)
+
+    Returns:
+        Dictionary with chain, address, and list of token balances with units, prices, and values
+
+    Raises:
+        HTTPException: 503 if Gateway unavailable, 400 if chain/network not found or no wallet available
+
+    Note:
+        - Prices are fetched from rate sources using "gateway" connector for AMM pairs
+        - Gateway wallet balances are also automatically included in portfolio state
+          under master_account as gateway_{chain} connectors
+    """
+    try:
+        # Get default wallet address if not provided
+        if not address:
+            address = await accounts_service.gateway_client.get_default_wallet_address(chain)
+            if not address:
+                raise HTTPException(status_code=400, detail=f"No wallet found for chain '{chain}'")
+
+        balances = await accounts_service.get_gateway_balances(chain, address, tokens)
+        return {"chain": chain, "address": address, "balances": balances}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
