@@ -19,6 +19,11 @@ class GatewayStatus(BaseModel):
     port: Optional[int] = Field(default=None, description="Port Gateway is running on")
 
 
-class GatewayAction(BaseModel):
-    """Actions that can be performed on Gateway"""
-    action: str = Field(description="Action to perform: start, stop, restart, remove")
+class AddPoolRequest(BaseModel):
+    """Request to add a liquidity pool"""
+    connector: str = Field(description="DEX connector name (e.g., 'raydium', 'meteora')")
+    type: str = Field(description="Pool type (e.g., 'amm', 'clmm')")
+    network: str = Field(description="Network name (e.g., 'mainnet-beta')")
+    base: str = Field(description="Base token symbol")
+    quote: str = Field(description="Quote token symbol")
+    address: str = Field(description="Pool contract address")

@@ -105,7 +105,14 @@ from .docker import DockerImage
 from .gateway import (
     GatewayConfig,
     GatewayStatus,
-    GatewayAction,
+    AddPoolRequest,
+)
+
+# Gateway wallet models
+from .gateway_models import (
+    GatewayWalletCredential,
+    GatewayWalletInfo,
+    GatewayBalanceRequest,
 )
 
 # Backtesting models
@@ -122,6 +129,7 @@ from .connectors import (
     ConnectorTradingRulesResponse,
     ConnectorOrderTypesResponse,
     ConnectorListResponse,
+    AddTokenRequest,
 )
 
 # Portfolio models
@@ -233,7 +241,11 @@ __all__ = [
     # Gateway models
     "GatewayConfig",
     "GatewayStatus",
-    "GatewayAction",
+    "AddPoolRequest",
+    # Gateway wallet models
+    "GatewayWalletCredential",
+    "GatewayWalletInfo",
+    "GatewayBalanceRequest",
     # Backtesting models
     "BacktestingConfig",
     # Pagination models
@@ -247,6 +259,7 @@ __all__ = [
     "ConnectorTradingRulesResponse",
     "ConnectorOrderTypesResponse",
     "ConnectorListResponse",
+    "AddTokenRequest",
     # Portfolio models
     "TokenBalance",
     "ConnectorBalances",
