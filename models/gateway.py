@@ -1,6 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
+
+# ============================================
+# Container Management Models
+# ============================================
 
 class GatewayConfig(BaseModel):
     """Configuration for Gateway container deployment"""
@@ -19,11 +23,53 @@ class GatewayStatus(BaseModel):
     port: Optional[int] = Field(default=None, description="Port Gateway is running on")
 
 
+# ============================================
+# Wallet Management Models
+# ============================================
+
+class GatewayWalletCredential(BaseModel):
+    """Credentials for connecting a Gateway wallet"""
+    chain: str = Field(description="Blockchain chain (e.g., 'solana', 'ethereum')")
+    private_key: str = Field(description="Wallet private key")
+    network: Optional[str] = Field(default=None, description="Network to use (defaults to chain's default)")
+
+
+class GatewayWalletInfo(BaseModel):
+    """Information about a connected Gateway wallet"""
+    chain: str = Field(description="Blockchain chain")
+    address: str = Field(description="Wallet address")
+    network: str = Field(description="Network the wallet is configured for")
+
+
+# ============================================
+# Pool and Token Management Models
+# ============================================
+
 class AddPoolRequest(BaseModel):
     """Request to add a liquidity pool"""
-    connector: str = Field(description="DEX connector name (e.g., 'raydium', 'meteora')")
-    type: str = Field(description="Pool type (e.g., 'amm', 'clmm')")
-    network: str = Field(description="Network name (e.g., 'mainnet-beta')")
+    connector_name: str = Field(description="DEX connector name (e.g., 'raydium', 'meteora')")
+    type: str = Field(description="Pool type ('clmm' for concentrated liquidity)")
+    network: str = Field(description="Network ID in 'chain-network' format (e.g., 'solana-mainnet-beta', 'ethereum-mainnet')")
     base: str = Field(description="Base token symbol")
     quote: str = Field(description="Quote token symbol")
     address: str = Field(description="Pool contract address")
+
+
+class AddTokenRequest(BaseModel):
+    """Request to add a custom token to Gateway"""
+    address: str = Field(description="Token contract address")
+    symbol: str = Field(description="Token symbol")
+    name: Optional[str] = Field(default=None, description="Token name (defaults to symbol)")
+    decimals: int = Field(description="Number of decimals for the token")
+    network: str = Field(description="Network ID in 'chain-network' format (e.g., 'solana-mainnet-beta', 'ethereum-mainnet')")
+
+
+# ============================================
+# Balance Query Models
+# ============================================
+
+class GatewayBalanceRequest(BaseModel):
+    """Request for Gateway wallet balances"""
+    account_name: str = Field(description="Account name")
+    chain: str = Field(description="Blockchain chain")
+    tokens: Optional[List[str]] = Field(default=None, description="List of token symbols to query (optional)")

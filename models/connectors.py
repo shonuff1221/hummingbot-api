@@ -54,12 +54,3 @@ class ConnectorListResponse(BaseModel):
     """Response for list of available connectors"""
     connectors: List[str] = Field(description="List of available connector names")
     count: int = Field(description="Total number of connectors")
-
-
-class AddTokenRequest(BaseModel):
-    """Request to add a custom token to Gateway"""
-    address: str = Field(description="Token contract address")
-    symbol: str = Field(description="Token symbol (e.g., 'USDC')")
-    name: str = Field(description="Token name (e.g., 'USD Coin')")
-    decimals: int = Field(description="Token decimals (e.g., 6 for USDC)")
-    network: Optional[str] = Field(default=None, description="Network name (uses chain default if not specified)")

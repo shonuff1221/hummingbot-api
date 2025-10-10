@@ -101,18 +101,15 @@ from .accounts import (
 # Docker models
 from .docker import DockerImage
 
-# Gateway models
+# Gateway models (consolidated)
 from .gateway import (
     GatewayConfig,
     GatewayStatus,
-    AddPoolRequest,
-)
-
-# Gateway wallet models
-from .gateway_models import (
     GatewayWalletCredential,
     GatewayWalletInfo,
     GatewayBalanceRequest,
+    AddPoolRequest,
+    AddTokenRequest,
 )
 
 # Backtesting models
@@ -129,7 +126,29 @@ from .connectors import (
     ConnectorTradingRulesResponse,
     ConnectorOrderTypesResponse,
     ConnectorListResponse,
-    AddTokenRequest,
+)
+
+# Gateway Trading models (Swap + CLMM only, AMM removed)
+from .gateway_trading import (
+    # Swap models
+    SwapQuoteRequest,
+    SwapQuoteResponse,
+    SwapExecuteRequest,
+    SwapExecuteResponse,
+    # CLMM models
+    CLMMOpenPositionRequest,
+    CLMMOpenPositionResponse,
+    CLMMAddLiquidityRequest,
+    CLMMRemoveLiquidityRequest,
+    CLMMClosePositionRequest,
+    CLMMCollectFeesRequest,
+    CLMMCollectFeesResponse,
+    CLMMPositionsOwnedRequest,
+    CLMMPositionInfo,
+    CLMMGetPositionInfoRequest,
+    # Pool info models
+    GetPoolInfoRequest,
+    PoolInfo,
 )
 
 # Portfolio models
@@ -241,11 +260,11 @@ __all__ = [
     # Gateway models
     "GatewayConfig",
     "GatewayStatus",
-    "AddPoolRequest",
-    # Gateway wallet models
     "GatewayWalletCredential",
     "GatewayWalletInfo",
     "GatewayBalanceRequest",
+    "AddPoolRequest",
+    "AddTokenRequest",
     # Backtesting models
     "BacktestingConfig",
     # Pagination models
@@ -259,7 +278,23 @@ __all__ = [
     "ConnectorTradingRulesResponse",
     "ConnectorOrderTypesResponse",
     "ConnectorListResponse",
-    "AddTokenRequest",
+    # Gateway Trading models
+    "SwapQuoteRequest",
+    "SwapQuoteResponse",
+    "SwapExecuteRequest",
+    "SwapExecuteResponse",
+    "CLMMOpenPositionRequest",
+    "CLMMOpenPositionResponse",
+    "CLMMAddLiquidityRequest",
+    "CLMMRemoveLiquidityRequest",
+    "CLMMClosePositionRequest",
+    "CLMMCollectFeesRequest",
+    "CLMMCollectFeesResponse",
+    "CLMMPositionsOwnedRequest",
+    "CLMMPositionInfo",
+    "CLMMGetPositionInfoRequest",
+    "GetPoolInfoRequest",
+    "PoolInfo",
     # Portfolio models
     "TokenBalance",
     "ConnectorBalances",
