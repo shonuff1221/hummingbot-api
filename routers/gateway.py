@@ -16,6 +16,36 @@ def camel_to_snake(name: str) -> str:
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
 
+def snake_to_camel(name: str) -> str:
+    """
+    Convert snake_case to camelCase, handling common acronyms.
+
+    Special cases:
+    - url -> URL
+    - cu -> CU (compute units)
+    - id -> ID
+    - api -> API
+    - rpc -> RPC
+    """
+    # Map of acronyms that should be uppercase
+    acronyms = {'url', 'cu', 'id', 'api', 'rpc', 'uri'}
+
+    components = name.split('_')
+
+    # Process each component
+    result_parts = [components[0]]  # First component stays lowercase
+
+    for component in components[1:]:
+        if component.lower() in acronyms:
+            # Uppercase acronyms
+            result_parts.append(component.upper())
+        else:
+            # Title case for normal words
+            result_parts.append(component.title())
+
+    return ''.join(result_parts)
+
+
 def normalize_gateway_response(data: Dict) -> Dict:
     """
     Normalize Gateway response data to Python conventions.
@@ -124,22 +154,22 @@ async def list_connectors(accounts_service: AccountsService = Depends(get_accoun
         raise HTTPException(status_code=500, detail=f"Error listing connectors: {str(e)}")
 
 
-@router.get("/connectors/{connector}")
+@router.get("/connectors/{connector_name}")
 async def get_connector_config(
-    connector: str,
+    connector_name: str,
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> Dict:
     """
     Get configuration for a specific DEX connector.
 
     Args:
-        connector: Connector name (e.g., 'meteora', 'raydium')
+        connector_name: Connector name (e.g., 'meteora', 'raydium')
     """
     try:
         if not await accounts_service.gateway_client.ping():
             raise HTTPException(status_code=503, detail="Gateway service is not available")
 
-        result = await accounts_service.gateway_client.get_config(connector)
+        result = await accounts_service.gateway_client.get_config(connector_name)
         return normalize_gateway_response(result)
 
     except HTTPException:
@@ -148,9 +178,9 @@ async def get_connector_config(
         raise HTTPException(status_code=500, detail=f"Error getting connector config: {str(e)}")
 
 
-@router.post("/connectors/{connector}")
+@router.post("/connectors/{connector_name}")
 async def update_connector_config(
-    connector: str,
+    connector_name: str,
     config_updates: Dict,
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> Dict:
@@ -158,8 +188,10 @@ async def update_connector_config(
     Update configuration for a DEX connector.
 
     Args:
-        connector: Connector name (e.g., 'meteora', 'raydium')
-        config_updates: Dict with path-value pairs to update (e.g., {"slippagePct": 0.5})
+        connector_name: Connector name (e.g., 'meteora', 'raydium')
+        config_updates: Dict with path-value pairs to update.
+                       Keys can be in snake_case (e.g., {"slippage_pct": 0.5})
+                       or camelCase (e.g., {"slippagePct": 0.5})
     """
     try:
         if not await accounts_service.gateway_client.ping():
@@ -167,11 +199,13 @@ async def update_connector_config(
 
         results = []
         for path, value in config_updates.items():
-            result = await accounts_service.gateway_client.update_config(connector, path, value)
+            # Convert snake_case to camelCase if needed
+            camel_path = snake_to_camel(path) if '_' in path else path
+            result = await accounts_service.gateway_client.update_config(connector_name, camel_path, value)
             results.append(result)
 
         return {
-            "message": f"Updated {len(results)} config parameter(s) for {connector}",
+            "message": f"Updated {len(results)} config parameter(s) for {connector_name}",
             "results": results
         }
 
@@ -211,7 +245,10 @@ async def get_chain_config(
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> Dict:
     """
-    Get configuration for a specific chain (network).
+    [DEPRECATED] Get configuration for a specific chain (network).
+
+    **⚠️ DEPRECATED**: This endpoint has limited utility.
+    Use GET /gateway/networks/{network_id} instead.
 
     Args:
         chain: Chain name (e.g., 'solana', 'ethereum')
@@ -236,11 +273,16 @@ async def update_chain_config(
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> Dict:
     """
-    Update configuration for a chain (network).
+    [DEPRECATED] Update configuration for a chain (network).
+
+    **⚠️ DEPRECATED**: This endpoint has limited utility.
+    Use POST /gateway/networks/{network_id} instead.
 
     Args:
         chain: Chain name (e.g., 'solana', 'ethereum')
-        config_updates: Dict with path-value pairs to update (e.g., {"nodeURL": "https://..."})
+        config_updates: Dict with path-value pairs to update.
+                       Keys can be in snake_case (e.g., {"node_url": "https://..."})
+                       or camelCase (e.g., {"nodeURL": "https://..."})
     """
     try:
         if not await accounts_service.gateway_client.ping():
@@ -248,7 +290,9 @@ async def update_chain_config(
 
         results = []
         for path, value in config_updates.items():
-            result = await accounts_service.gateway_client.update_config(chain, path, value)
+            # Convert snake_case to camelCase if needed
+            camel_path = snake_to_camel(path) if '_' in path else path
+            result = await accounts_service.gateway_client.update_config(chain, camel_path, value)
             results.append(result)
 
         return {
@@ -269,28 +313,20 @@ async def get_chain_network_config(
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> Dict:
     """
-    Get configuration for a specific chain-network combination.
+    [ALIAS] Get configuration for a specific chain-network combination.
+
+    This is an alias for GET /gateway/networks/{network_id}.
+    Use /gateway/networks/solana-mainnet-beta for the primary interface.
 
     Args:
         chain: Chain name (e.g., 'solana', 'ethereum')
         network: Network name (e.g., 'mainnet-beta', 'mainnet')
 
     Example: GET /gateway/chains/solana/networks/mainnet-beta
-    This queries Gateway's 'solana-mainnet-beta' namespace.
     """
-    try:
-        if not await accounts_service.gateway_client.ping():
-            raise HTTPException(status_code=503, detail="Gateway service is not available")
-
-        # Combine chain and network into Gateway namespace format
-        namespace = f"{chain}-{network}"
-        result = await accounts_service.gateway_client.get_config(namespace)
-        return normalize_gateway_response(result)
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting chain-network config: {str(e)}")
+    # Alias: Forward to the primary networks endpoint
+    network_id = f"{chain}-{network}"
+    return await get_network_config(network_id, accounts_service)
 
 
 @router.post("/chains/{chain}/networks/{network}")
@@ -301,36 +337,23 @@ async def update_chain_network_config(
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> Dict:
     """
-    Update configuration for a specific chain-network combination.
+    [ALIAS] Update configuration for a specific chain-network combination.
+
+    This is an alias for POST /gateway/networks/{network_id}.
+    Use /gateway/networks/solana-mainnet-beta for the primary interface.
 
     Args:
         chain: Chain name (e.g., 'solana', 'ethereum')
         network: Network name (e.g., 'mainnet-beta', 'mainnet')
-        config_updates: Dict with path-value pairs to update (e.g., {"nodeURL": "https://..."})
+        config_updates: Dict with path-value pairs to update.
+                       Keys can be in snake_case (e.g., {"node_url": "https://..."})
+                       or camelCase (e.g., {"nodeURL": "https://..."})
 
     Example: POST /gateway/chains/solana/networks/mainnet-beta
-    This updates Gateway's 'solana-mainnet-beta' namespace.
     """
-    try:
-        if not await accounts_service.gateway_client.ping():
-            raise HTTPException(status_code=503, detail="Gateway service is not available")
-
-        # Combine chain and network into Gateway namespace format
-        namespace = f"{chain}-{network}"
-        results = []
-        for path, value in config_updates.items():
-            result = await accounts_service.gateway_client.update_config(namespace, path, value)
-            results.append(result)
-
-        return {
-            "message": f"Updated {len(results)} config parameter(s) for {chain}-{network}",
-            "results": results
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating chain-network config: {str(e)}")
+    # Alias: Forward to the primary networks endpoint
+    network_id = f"{chain}-{network}"
+    return await update_network_config(network_id, config_updates, accounts_service)
 
 
 @router.get("/chains/{chain}/tokens")
@@ -422,7 +445,7 @@ async def add_chain_token(
 
 @router.get("/pools")
 async def list_pools(
-    connector: str = Query(description="DEX connector (e.g., 'meteora', 'raydium')"),
+    connector_name: str = Query(description="DEX connector (e.g., 'meteora', 'raydium')"),
     network: str = Query(description="Network (e.g., 'mainnet-beta')"),
     accounts_service: AccountsService = Depends(get_accounts_service)
 ) -> List[Dict]:
@@ -435,10 +458,10 @@ async def list_pools(
         if not await accounts_service.gateway_client.ping():
             raise HTTPException(status_code=503, detail="Gateway service is not available")
 
-        pools = await accounts_service.gateway_client.get_pools(connector, network)
+        pools = await accounts_service.gateway_client.get_pools(connector_name, network)
 
         if not pools:
-            raise HTTPException(status_code=400, detail=f"No pools found for {connector}/{network}")
+            raise HTTPException(status_code=400, detail=f"No pools found for {connector_name}/{network}")
 
         # Normalize each pool
         normalized_pools = [normalize_gateway_response(pool) for pool in pools]
@@ -466,7 +489,7 @@ async def add_pool(
             raise HTTPException(status_code=503, detail="Gateway service is not available")
 
         result = await accounts_service.gateway_client.add_pool(
-            connector=pool_request.connector,
+            connector=pool_request.connector_name,
             pool_type=pool_request.type,
             network=pool_request.network,
             base_symbol=pool_request.base,
@@ -479,7 +502,7 @@ async def add_pool(
 
         trading_pair = f"{pool_request.base}-{pool_request.quote}"
         return {
-            "message": f"Pool {trading_pair} added to {pool_request.connector}/{pool_request.network}",
+            "message": f"Pool {trading_pair} added to {pool_request.connector_name}/{pool_request.network}",
             "trading_pair": trading_pair
         }
 
@@ -487,3 +510,155 @@ async def add_pool(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding pool: {str(e)}")
+
+
+# ============================================
+# Networks (Primary Endpoints)
+# ============================================
+
+@router.get("/networks")
+async def list_networks(accounts_service: AccountsService = Depends(get_accounts_service)) -> Dict:
+    """
+    List all available networks across all chains.
+
+    Returns a flattened list of network IDs in the format 'chain-network'.
+    This is the primary interface for network discovery.
+    """
+    try:
+        if not await accounts_service.gateway_client.ping():
+            raise HTTPException(status_code=503, detail="Gateway service is not available")
+
+        chains_result = await accounts_service.gateway_client.get_chains()
+
+        # Flatten chain-network combinations into network IDs
+        networks = []
+        if "chains" in chains_result and isinstance(chains_result["chains"], list):
+            for chain_item in chains_result["chains"]:
+                chain = chain_item.get("chain")
+                chain_networks = chain_item.get("networks", [])
+                for network in chain_networks:
+                    network_id = f"{chain}-{network}"
+                    networks.append({
+                        "network_id": network_id,
+                        "chain": chain,
+                        "network": network
+                    })
+
+        return {
+            "networks": networks,
+            "count": len(networks)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing networks: {str(e)}")
+
+
+@router.get("/networks/{network_id}")
+async def get_network_config(
+    network_id: str,
+    accounts_service: AccountsService = Depends(get_accounts_service)
+) -> Dict:
+    """
+    Get configuration for a specific network.
+
+    Args:
+        network_id: Network ID in format 'chain-network' (e.g., 'solana-mainnet-beta', 'ethereum-mainnet')
+
+    Example: GET /gateway/networks/solana-mainnet-beta
+    """
+    try:
+        if not await accounts_service.gateway_client.ping():
+            raise HTTPException(status_code=503, detail="Gateway service is not available")
+
+        result = await accounts_service.gateway_client.get_config(network_id)
+        return normalize_gateway_response(result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting network config: {str(e)}")
+
+
+@router.post("/networks/{network_id}")
+async def update_network_config(
+    network_id: str,
+    config_updates: Dict,
+    accounts_service: AccountsService = Depends(get_accounts_service)
+) -> Dict:
+    """
+    Update configuration for a specific network.
+
+    Args:
+        network_id: Network ID in format 'chain-network' (e.g., 'solana-mainnet-beta')
+        config_updates: Dict with path-value pairs to update.
+                       Keys can be in snake_case (e.g., {"node_url": "https://..."})
+                       or camelCase (e.g., {"nodeURL": "https://..."})
+
+    Example: POST /gateway/networks/solana-mainnet-beta
+    """
+    try:
+        if not await accounts_service.gateway_client.ping():
+            raise HTTPException(status_code=503, detail="Gateway service is not available")
+
+        results = []
+        for path, value in config_updates.items():
+            # Convert snake_case to camelCase if needed
+            camel_path = snake_to_camel(path) if '_' in path else path
+            result = await accounts_service.gateway_client.update_config(network_id, camel_path, value)
+            results.append(result)
+
+        return {
+            "message": f"Updated {len(results)} config parameter(s) for {network_id}",
+            "results": results
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating network config: {str(e)}")
+
+
+@router.get("/networks/{network_id}/tokens")
+async def get_network_tokens(
+    network_id: str,
+    search: Optional[str] = Query(default=None),
+    accounts_service: AccountsService = Depends(get_accounts_service)
+) -> Dict:
+    """
+    Get available tokens for a network.
+
+    Args:
+        network_id: Network ID in format 'chain-network' (e.g., 'solana-mainnet-beta')
+        search: Filter tokens by symbol or name
+
+    Example: GET /gateway/networks/solana-mainnet-beta/tokens?search=USDC
+    """
+    try:
+        if not await accounts_service.gateway_client.ping():
+            raise HTTPException(status_code=503, detail="Gateway service is not available")
+
+        # Parse network_id into chain and network
+        parts = network_id.split('-', 1)
+        if len(parts) != 2:
+            raise HTTPException(status_code=400, detail=f"Invalid network_id format. Expected 'chain-network', got '{network_id}'")
+
+        chain, network = parts
+        result = await accounts_service.gateway_client.get_tokens(chain, network)
+
+        # Apply search filter
+        if search and "tokens" in result:
+            search_lower = search.lower()
+            result["tokens"] = [
+                token for token in result["tokens"]
+                if search_lower in token.get("symbol", "").lower() or
+                   search_lower in token.get("name", "").lower()
+            ]
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting network tokens: {str(e)}")
