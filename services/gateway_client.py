@@ -156,3 +156,220 @@ class GatewayClient:
             "address": address
         })
 
+    async def pool_info(self, connector: str, network: str, pool_address: str) -> Dict:
+        """Get detailed information about a specific pool"""
+        return await self._request("POST", "clmm/liquidity/pool", json={
+            "connector": connector,
+            "network": network,
+            "poolAddress": pool_address
+        })
+
+    # ============================================
+    # Swap Operations
+    # ============================================
+
+    async def quote_swap(
+        self,
+        connector: str,
+        network: str,
+        base_asset: str,
+        quote_asset: str,
+        amount: float,
+        side: str,
+        slippage_pct: Optional[float] = None,
+        pool_address: Optional[str] = None
+    ) -> Dict:
+        """Get a quote for a swap"""
+        payload = {
+            "network": network,
+            "baseToken": base_asset,
+            "quoteToken": quote_asset,
+            "amount": str(amount),
+            "side": side.upper()
+        }
+        if slippage_pct is not None:
+            payload["slippagePct"] = slippage_pct
+        if pool_address:
+            payload["poolAddress"] = pool_address
+
+        return await self._request("GET", f"connectors/{connector}/router/quote-swap", params=payload)
+
+    async def execute_swap(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        base_asset: str,
+        quote_asset: str,
+        amount: float,
+        side: str,
+        slippage_pct: Optional[float] = None
+    ) -> Dict:
+        """Execute a swap"""
+        payload = {
+            "network": network,
+            "address": wallet_address,
+            "baseToken": base_asset,
+            "quoteToken": quote_asset,
+            "amount": str(amount),
+            "side": side.upper()
+        }
+        if slippage_pct is not None:
+            payload["slippagePct"] = slippage_pct
+
+        return await self._request("POST", f"connectors/{connector}/router/execute-swap", json=payload)
+
+    async def execute_quote(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        quote_id: str
+    ) -> Dict:
+        """Execute a previously obtained quote"""
+        return await self._request("POST", f"connectors/{connector}/router/execute-quote", json={
+            "network": network,
+            "address": wallet_address,
+            "quoteId": quote_id
+        })
+
+    # ============================================
+    # Liquidity Operations - CLMM (Concentrated Liquidity)
+    # ============================================
+
+    async def clmm_open_position(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        pool_address: str,
+        lower_price: float,
+        upper_price: float,
+        base_token_amount: Optional[float] = None,
+        quote_token_amount: Optional[float] = None,
+        slippage_pct: Optional[float] = None
+    ) -> Dict:
+        """Open a NEW CLMM position with initial liquidity"""
+        payload = {
+            "connector": connector,
+            "network": network,
+            "address": wallet_address,
+            "poolAddress": pool_address,
+            "lowerPrice": lower_price,
+            "upperPrice": upper_price
+        }
+        if base_token_amount is not None:
+            payload["baseTokenAmount"] = str(base_token_amount)
+        if quote_token_amount is not None:
+            payload["quoteTokenAmount"] = str(quote_token_amount)
+        if slippage_pct is not None:
+            payload["slippagePct"] = slippage_pct
+
+        return await self._request("POST", "clmm/liquidity/open", json=payload)
+
+    async def clmm_add_liquidity(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        position_address: str,
+        base_token_amount: Optional[float] = None,
+        quote_token_amount: Optional[float] = None,
+        slippage_pct: Optional[float] = None
+    ) -> Dict:
+        """Add more liquidity to an existing CLMM position"""
+        payload = {
+            "connector": connector,
+            "network": network,
+            "address": wallet_address,
+            "positionAddress": position_address
+        }
+        if base_token_amount is not None:
+            payload["baseTokenAmount"] = str(base_token_amount)
+        if quote_token_amount is not None:
+            payload["quoteTokenAmount"] = str(quote_token_amount)
+        if slippage_pct is not None:
+            payload["slippagePct"] = slippage_pct
+
+        return await self._request("POST", "clmm/liquidity/add", json=payload)
+
+    async def clmm_close_position(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        position_address: str
+    ) -> Dict:
+        """Close a CLMM position completely"""
+        return await self._request("POST", "clmm/liquidity/close", json={
+            "connector": connector,
+            "network": network,
+            "address": wallet_address,
+            "positionAddress": position_address
+        })
+
+    async def clmm_remove_liquidity(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        position_address: str,
+        percentage: float
+    ) -> Dict:
+        """Remove liquidity from a CLMM position (partial)"""
+        return await self._request("POST", "clmm/liquidity/remove", json={
+            "connector": connector,
+            "network": network,
+            "address": wallet_address,
+            "positionAddress": position_address,
+            "percentage": percentage
+        })
+
+    async def clmm_position_info(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        position_address: str
+    ) -> Dict:
+        """Get CLMM position information"""
+        return await self._request("POST", "clmm/liquidity/position", json={
+            "connector": connector,
+            "network": network,
+            "address": wallet_address,
+            "positionAddress": position_address
+        })
+
+    async def clmm_positions_owned(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        pool_address: Optional[str] = None
+    ) -> Dict:
+        """Get all CLMM positions owned by wallet"""
+        payload = {
+            "connector": connector,
+            "network": network,
+            "address": wallet_address
+        }
+        if pool_address:
+            payload["poolAddress"] = pool_address
+
+        return await self._request("POST", "clmm/liquidity/positions", json=payload)
+
+    async def clmm_collect_fees(
+        self,
+        connector: str,
+        network: str,
+        wallet_address: str,
+        position_address: str
+    ) -> Dict:
+        """Collect accumulated fees from a CLMM position"""
+        return await self._request("POST", "clmm/liquidity/collect-fees", json={
+            "connector": connector,
+            "network": network,
+            "address": wallet_address,
+            "positionAddress": position_address
+        })
+
