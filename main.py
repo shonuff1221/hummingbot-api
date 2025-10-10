@@ -47,6 +47,7 @@ from routers import (
     controllers,
     docker,
     gateway,
+    gateway_trading,
     market_data,
     portfolio,
     scripts,
@@ -200,6 +201,7 @@ app.include_router(accounts.router, dependencies=[Depends(auth_user)])
 app.include_router(connectors.router, dependencies=[Depends(auth_user)])
 app.include_router(portfolio.router, dependencies=[Depends(auth_user)])
 app.include_router(trading.router, dependencies=[Depends(auth_user)])
+app.include_router(gateway_trading.router, dependencies=[Depends(auth_user)])
 app.include_router(bot_orchestration.router, dependencies=[Depends(auth_user)])
 app.include_router(controllers.router, dependencies=[Depends(auth_user)])
 app.include_router(scripts.router, dependencies=[Depends(auth_user)])
