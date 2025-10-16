@@ -3,7 +3,7 @@ services:
     container_name: hummingbot-api
     image: hummingbot/hummingbot-api:latest
     ports:
-      - "8117:8000"
+      - "${HB_API_HOST_PORT:-8117}:${HB_API_CONTAINER_PORT:-8000}"
     volumes:
       - ./bots:/hummingbot-api/bots
       - /var/run/docker.sock:/var/run/docker.sock
@@ -11,8 +11,8 @@ services:
       - .env
     environment:
       # Override specific values for Docker networking
-      - BROKER_HOST=emqx
-      - DATABASE_URL=postgresql+asyncpg://hbot:hummingbot-api@postgres:5432/hummingbot_api
+      - BROKER_HOST=${BROKER_HOST:-emqx}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://hbot:hummingbot-api@postgres:5432/hummingbot_api}
     networks:
       - emqx-bridge
     depends_on:
@@ -21,13 +21,13 @@ services:
     container_name: dashboard
     image: hummingbot/dashboard:latest
     ports:
-      - "8501:8501"
+      - "${DASHBOARD_HOST_PORT:-8501}:${DASHBOARD_CONTAINER_PORT:-8501}"
     environment:
-        - AUTH_SYSTEM_ENABLED=False
-        - BACKEND_API_HOST=hummingbot-api
-        - BACKEND_API_PORT=8000
-        - BACKEND_API_USERNAME=admin
-        - BACKEND_API_PASSWORD=admin
+        - AUTH_SYSTEM_ENABLED=${AUTH_SYSTEM_ENABLED:-False}
+        - BACKEND_API_HOST=${BACKEND_API_HOST:-hummingbot-api}
+        - BACKEND_API_PORT=${BACKEND_API_PORT:-8000}
+        - BACKEND_API_USERNAME=${BACKEND_API_USERNAME:-admin}
+        - BACKEND_API_PASSWORD=${BACKEND_API_PASSWORD:-admin}
     volumes:
       - dashboard:/home/dashboard
   emqx:
@@ -35,23 +35,23 @@ services:
     image: emqx:5
     restart: unless-stopped
     environment:
-      - EMQX_NAME=emqx
-      - EMQX_HOST=node1.emqx.local
-      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static
-      - EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.local]
-      - EMQX_LOADED_PLUGINS="emqx_recon,emqx_retainer,emqx_management,emqx_dashboard"
+      - EMQX_NAME=${EMQX_NAME:-emqx}
+      - EMQX_HOST=${EMQX_HOST:-node1.emqx.local}
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=${EMQX_CLUSTER__DISCOVERY_STRATEGY:-static}
+      - EMQX_CLUSTER__STATIC__SEEDS=${EMQX_CLUSTER__STATIC__SEEDS:-[emqx@node1.emqx.local]}
+      - EMQX_LOADED_PLUGINS=${EMQX_LOADED_PLUGINS:-"emqx_recon,emqx_retainer,emqx_management,emqx_dashboard"}
     volumes:
       - emqx-data:/opt/emqx/data
       - emqx-log:/opt/emqx/log
       - emqx-etc:/opt/emqx/etc
     ports:
-      - "1883:1883"  # mqtt:tcp
-      - "8883:8883"  # mqtt:tcp:ssl
-      - "8083:8083"  # mqtt:ws
-      - "8084:8084"  # mqtt:ws:ssl
-      - "8081:8081"  # http:management
-      - "18083:18083"  # http:dashboard
-      - "61613:61613"  # web-stomp gateway
+      - "${EMQX_MQTT_TCP_PORT:-1883}:1883"  # mqtt:tcp
+      - "${EMQX_MQTT_TCP_SSL_PORT:-8883}:8883"  # mqtt:tcp:ssl
+      - "${EMQX_MQTT_WS_PORT:-8083}:8083"  # mqtt:ws
+      - "${EMQX_MQTT_WS_SSL_PORT:-8084}:8084"  # mqtt:ws:ssl
+      - "${EMQX_HTTP_MGMT_PORT:-8081}:8081"  # http:management
+      - "${EMQX_HTTP_DASHBOARD_PORT:-18083}:18083"  # http:dashboard
+      - "${EMQX_WEB_STOMP_PORT:-61613}:61613"  # web-stomp gateway
     networks:
       emqx-bridge:
         aliases:
@@ -66,17 +66,17 @@ services:
     image: postgres:15
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=hummingbot_api
-      - POSTGRES_USER=hbot
-      - POSTGRES_PASSWORD=hummingbot-api
+      - POSTGRES_DB=${POSTGRES_DB:-hummingbot_api}
+      - POSTGRES_USER=${POSTGRES_USER:-hbot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-hummingbot-api}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     networks:
       - emqx-bridge
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hbot -d hummingbot_api"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hbot} -d ${POSTGRES_DB:-hummingbot_api}"]
       interval: 10s
       timeout: 5s
       retries: 5
