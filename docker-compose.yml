@@ -17,6 +17,19 @@ services:
       - emqx-bridge
     depends_on:
       - postgres
+  dashboard:
+    container_name: dashboard
+    image: hummingbot/dashboard:latest
+    ports:
+      - "8501:8501"
+    environment:
+        - AUTH_SYSTEM_ENABLED=False
+        - BACKEND_API_HOST=hummingbot-api
+        - BACKEND_API_PORT=8000
+        - BACKEND_API_USERNAME=admin
+        - BACKEND_API_PASSWORD=admin
+    volumes:
+      - dashboard:/home/dashboard
   emqx:
     container_name: hummingbot-broker
     image: emqx:5
@@ -77,3 +90,4 @@ volumes:
   emqx-log: { }
   emqx-etc: { }
   postgres-data: { }
+  dashboard: { }
