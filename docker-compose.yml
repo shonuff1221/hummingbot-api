@@ -87,7 +87,7 @@ services:
     networks:
       - emqx-bridge
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hbot} -d ${POSTGRES_DB:-hummingbot_api}"]
       interval: 10s
       timeout: 5s
       retries: 5
