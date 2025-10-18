@@ -31,6 +31,16 @@ services:
         - BACKEND_API_PASSWORD=${BACKEND_API_PASSWORD:-admin}
     volumes:
       - dashboard:/home/dashboard
+    networks:
+      - emqx-bridge
+    depends_on:
+      hummingbot-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   emqx:
     container_name: hummingbot-broker
     image: emqx:5
