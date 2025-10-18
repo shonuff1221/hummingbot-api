@@ -27,8 +27,8 @@ services:
         - AUTH_SYSTEM_ENABLED=${AUTH_SYSTEM_ENABLED:-False}
         - BACKEND_API_HOST=${BACKEND_API_HOST:-hummingbot-api}
         - BACKEND_API_PORT=${BACKEND_API_PORT:-8000}
-        - BACKEND_API_USERNAME=${BACKEND_API_USERNAME:-admin}
-        - BACKEND_API_PASSWORD=${BACKEND_API_PASSWORD:-admin}
+        - BACKEND_API_USERNAME=${BACKEND_API_USERNAME}
+        - BACKEND_API_PASSWORD=${BACKEND_API_PASSWORD}
     volumes:
       - dashboard:/home/dashboard
     networks:
