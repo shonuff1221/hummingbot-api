@@ -78,4 +78,4 @@ volumes:
   emqx-log: { }
   emqx-etc: { }
   postgres-data: { }
-  dashboard: { }
+  
