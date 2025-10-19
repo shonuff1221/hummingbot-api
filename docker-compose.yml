@@ -18,29 +18,6 @@ services:
       - emqx-bridge
     depends_on:
       - postgres
-  dashboard:
-    container_name: dashboard
-    image: hummingbot/dashboard:latest
-    ports:
-      - "${DASHBOARD_HOST_PORT}:${DASHBOARD_CONTAINER_PORT}"
-    environment:
-        - AUTH_SYSTEM_ENABLED=${AUTH_SYSTEM_ENABLED}
-        - BACKEND_API_HOST=${BACKEND_API_HOST}
-        - BACKEND_API_PORT=${BACKEND_API_PORT}
-        - BACKEND_API_USERNAME=${BACKEND_API_USERNAME}
-        - BACKEND_API_PASSWORD=${BACKEND_API_PASSWORD}
-    volumes:
-      - dashboard:/home/dashboard
-    networks:
-      - emqx-bridge
-    depends_on:
-      hummingbot-api:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
   emqx:
     container_name: hummingbot-broker
     image: emqx:5
