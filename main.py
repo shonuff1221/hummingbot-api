@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 # Load environment variables early
 load_dotenv()
 
+# Set rate oracle source via environment variable to override hummingbot defaults
+import os
+os.environ["HUMMINGBOT_RATE_ORACLE_SOURCE"] = "coin_gecko"
+
 VERSION = "1.0.1"
 
 # Monkey patch save_to_yml to prevent writes to library directory
@@ -23,7 +27,25 @@ def patched_save_to_yml(yml_path, cm):
 from hummingbot.client.config import config_helpers
 config_helpers.save_to_yml = patched_save_to_yml
 
+# Configure rate oracle to use coin_gecko instead of binance
+from hummingbot.client.config.config_data_types import ClientConfigMap
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
+
+# Patch RateOracle to use coin_gecko
+original_get_instance = RateOracle.get_instance
+
+def patched_get_instance():
+    """Patched RateOracle.get_instance to use coin_gecko source"""
+    instance = original_get_instance()
+    # Force the rate oracle to use coin_gecko
+    if hasattr(instance, '_rate_source') and instance._rate_source is not None:
+        if instance._rate_source.__class__.__name__ != 'CoinGeckoRateSource':
+            logging.info(f"Switching rate oracle from {instance._rate_source.__class__.__name__} to CoinGeckoRateSource")
+            from hummingbot.core.rate_oracle.sources.coin_gecko_rate_source import CoinGeckoRateSource
+            instance._rate_source = CoinGeckoRateSource()
+    return instance
+
+RateOracle.get_instance = patched_get_instance
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
